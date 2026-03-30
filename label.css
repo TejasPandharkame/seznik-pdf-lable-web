@@ -1,0 +1,914 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, sans-serif
+}
+
+body {
+    background: #f5f5f3;
+    color: #1a1a1a;
+    min-height: 100vh
+}
+
+.app {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 20px 16px
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 22px
+}
+
+.logo {
+    width: 36px;
+    height: 36px;
+    background: #534AB7;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    flex-shrink: 0
+}
+
+.header h1 {
+    font-size: 19px;
+    font-weight: 600
+}
+
+.steps {
+    display: flex;
+    margin-bottom: 22px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+    background: #fff
+}
+
+.step-tab {
+    flex: 1;
+    padding: 11px 8px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: #aaa;
+    cursor: pointer;
+    border-right: 1px solid #e0e0e0;
+    transition: background .15s
+}
+
+.step-tab:last-child {
+    border-right: none
+}
+
+.step-tab.active {
+    background: #534AB7;
+    color: #fff
+}
+
+.step-tab.done {
+    background: #eeeeff;
+    color: #534AB7
+}
+
+.step-num {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #e8e8e8;
+    color: #888;
+    font-size: 10px;
+    line-height: 18px;
+    margin-right: 5px;
+    text-align: center
+}
+
+.step-tab.active .step-num {
+    background: rgba(255, 255, 255, .3);
+    color: #fff
+}
+
+.card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e5e5e5;
+    padding: 20px;
+    margin-bottom: 16px
+}
+
+.upload-area {
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    padding: 40px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s
+}
+
+.upload-area:hover,
+.upload-area.drag {
+    border-color: #534AB7;
+    background: #f0effe
+}
+
+#fileInput {
+    display: none
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all .15s;
+    white-space: nowrap
+}
+
+.btn-primary {
+    background: #534AB7;
+    color: #fff
+}
+
+.btn-primary:hover {
+    background: #3C3489
+}
+
+.btn-outline {
+    background: #fff;
+    color: #534AB7;
+    border: 1px solid #534AB7
+}
+
+.btn-outline:hover {
+    background: #f0effe
+}
+
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 11px
+}
+
+.btn-danger {
+    background: #E24B4A;
+    color: #fff
+}
+
+.btn-danger:hover {
+    background: #A32D2D
+}
+
+.btn-ghost {
+    background: transparent;
+    color: #534AB7;
+    border: 1px solid #e0e0e0
+}
+
+.btn-ghost:hover {
+    background: #f0effe
+}
+
+.row {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap
+}
+
+.col {
+    flex: 1;
+    min-width: 140px
+}
+
+label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    display: block;
+    margin-bottom: 4px
+}
+
+input[type=number],
+input[type=text],
+select {
+    width: 100%;
+    padding: 7px 9px;
+    border-radius: 7px;
+    border: 1px solid #ddd;
+    font-size: 12px;
+    color: #1a1a1a;
+    background: #fafafa;
+    outline: none
+}
+
+input:focus,
+select:focus {
+    border-color: #534AB7
+}
+
+.section-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #222
+}
+
+.badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 500
+}
+
+.badge-green {
+    background: #EAF3DE;
+    color: #3B6D11
+}
+
+.badge-purple {
+    background: #EEEDFE;
+    color: #534AB7
+}
+
+.alert {
+    padding: 9px 13px;
+    border-radius: 8px;
+    font-size: 12px;
+    margin-bottom: 12px
+}
+
+.alert-info {
+    background: #E6F1FB;
+    color: #0C447C;
+    border: 1px solid #B5D4F4
+}
+
+.data-preview {
+    overflow: auto;
+    max-height: 180px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    margin-top: 10px
+}
+
+.data-preview table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px
+}
+
+.data-preview th {
+    background: #f5f5f3;
+    padding: 5px 8px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    font-weight: 500;
+    color: #555;
+    white-space: nowrap
+}
+
+.data-preview td {
+    padding: 4px 8px;
+    border-bottom: 1px solid #f0f0f0;
+    white-space: nowrap;
+    color: #333
+}
+
+.progress-bar {
+    height: 4px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    margin-top: 10px;
+    overflow: hidden
+}
+
+.progress-fill {
+    height: 100%;
+    background: #534AB7;
+    border-radius: 4px;
+    transition: width .3s
+}
+
+.footer-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 16px;
+    flex-wrap: wrap
+}
+
+.designer-layout {
+    display: flex;
+    gap: 14px;
+    min-height: 520px
+}
+
+.left-panel {
+    width: 195px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px
+}
+
+.canvas-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0
+}
+
+.right-panel {
+    width: 226px;
+    flex-shrink: 0
+}
+
+.panel-card {
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #e5e5e5;
+    padding: 14px;
+    margin-bottom: 10px
+}
+
+.panel-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #888;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: .5px
+}
+
+.type-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 10px;
+    border-radius: 7px;
+    border: 1px solid #ddd;
+    background: #fafafa;
+    cursor: pointer;
+    font-size: 12px;
+    color: #555;
+    transition: all .15s;
+    width: 100%;
+    margin-bottom: 6px
+}
+
+.type-btn:hover {
+    border-color: #534AB7;
+    color: #534AB7;
+    background: #f0effe
+}
+
+.type-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    flex-shrink: 0
+}
+
+.ti-text {
+    background: #EEF;
+    color: #534AB7
+}
+
+.ti-barcode {
+    background: #EAF3DE;
+    color: #3B6D11
+}
+
+.ti-qr {
+    background: #FAEEDA;
+    color: #633806
+}
+
+.col-chip {
+    padding: 5px 9px;
+    border-radius: 6px;
+    font-size: 11px;
+    background: #f0effe;
+    color: #534AB7;
+    border: 1px solid #d4cfff;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px
+}
+
+.col-chip:hover:not(.used) {
+    background: #534AB7;
+    color: #fff
+}
+
+.col-chip.used {
+    background: #f0f0f0;
+    color: #aaa;
+    border-color: #e0e0e0;
+    cursor: not-allowed;
+    text-decoration: line-through
+}
+
+.canvas-scroll {
+    overflow: auto;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background: #7a7a7a;
+    flex: 1;
+    min-height: 420px;
+    position: relative;
+    padding: 20px
+}
+
+.canvas-inner {
+    position: relative;
+    transform-origin: top left;
+    display: inline-block
+}
+
+#labelCanvas {
+    display: block;
+    background: #fff;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, .35)
+}
+
+/* Field elements */
+.field-el {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+    touch-action: none
+}
+
+.field-el .f-inner {
+    border: 1.5px dashed #534AB7;
+    border-radius: 3px;
+    background: rgba(83, 74, 183, .05);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #3C3489;
+    position: relative;
+    pointer-events: none;
+    overflow: visible
+}
+
+.field-el.selected .f-inner {
+    border: 2px solid #E24B4A;
+    background: rgba(226, 75, 74, .06)
+}
+
+.field-el .res-handle {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    width: 12px;
+    height: 12px;
+    background: #534AB7;
+    cursor: se-resize;
+    border-radius: 3px;
+    z-index: 5;
+    border: 2px solid #fff
+}
+
+.field-el.selected .res-handle {
+    background: #E24B4A
+}
+
+.field-el .del-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #E24B4A;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 10px;
+    line-height: 16px;
+    text-align: center;
+    display: none;
+    z-index: 10
+}
+
+
+/* Rotation handle (green dot above field) */
+.field-el .rot-handle {
+    position: absolute;
+    top: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 14px;
+    height: 14px;
+    background: #3B6D11;
+    cursor: grab;
+    border-radius: 50%;
+    z-index: 5;
+    border: 2px solid #fff;
+    display: none;
+    /* hidden until hover/select */
+}
+
+.field-el:hover .rot-handle,
+.field-el.selected .rot-handle {
+    display: block;
+}
+
+/* Rotation slider row in properties panel */
+.rot-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.rot-row input[type=range] {
+    flex: 1;
+    padding: 0;
+}
+
+.rot-val {
+    font-size: 11px;
+    color: #534AB7;
+    min-width: 32px;
+    text-align: right;
+}
+
+/* Size toolbar — wraps naturally on narrow screens */
+.size-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.zoom-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+}
+
+
+.field-el:hover .del-btn,
+.field-el.selected .del-btn {
+    display: block
+}
+
+.preview-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #e5e5e5;
+    flex-wrap: wrap
+}
+
+.type-pill {
+    display: inline-flex;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+    margin-bottom: 10px
+}
+
+.type-pill button {
+    padding: 4px 9px;
+    font-size: 11px;
+    border: none;
+    background: #f5f5f5;
+    color: #666;
+    cursor: pointer
+}
+
+.type-pill button.active {
+    background: #534AB7;
+    color: #fff
+}
+
+.style-toggles {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px
+}
+
+.style-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    background: #fafafa;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .15s;
+    color: #444
+}
+
+.style-btn:hover {
+    border-color: #534AB7;
+    color: #534AB7
+}
+
+.style-btn.active {
+    background: #534AB7;
+    color: #fff;
+    border-color: #534AB7
+}
+
+.align-btns {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px
+}
+
+.align-btn {
+    flex: 1;
+    padding: 5px 4px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    background: #fafafa;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .15s;
+    color: #444
+}
+
+.align-btn:hover {
+    border-color: #534AB7
+}
+
+.align-btn.active {
+    background: #534AB7;
+    color: #fff;
+    border-color: #534AB7
+}
+
+.preview-data-table {
+    overflow: auto;
+    max-height: 150px;
+    border-radius: 6px;
+    border: 1px solid #eee;
+    margin-top: 8px
+}
+
+.preview-data-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px
+}
+
+.preview-data-table th {
+    background: #534AB7;
+    color: #fff;
+    padding: 5px 8px;
+    text-align: left;
+    white-space: nowrap;
+    font-weight: 500
+}
+
+.preview-data-table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid #f0f0f0;
+    white-space: nowrap;
+    color: #333
+}
+
+.preview-data-table tr.active-row td {
+    background: #f0effe;
+    color: #3C3489;
+    font-weight: 500
+}
+
+.preview-data-table tr:hover td {
+    background: #f8f8ff;
+    cursor: pointer
+}
+
+.prop-row {
+    margin-bottom: 10px
+}
+
+/* Rotation control */
+.rot-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px
+}
+
+.rot-row input[type=range] {
+    flex: 1;
+    padding: 0
+}
+
+.rot-val {
+    font-size: 11px;
+    color: #534AB7;
+    min-width: 32px;
+    text-align: right
+}
+
+/* ── Size toolbar ──────────────────────────────────────
+   Wrap naturally so zoom controls don't overflow on
+   any screen size (including laptop at narrow widths). */
+.size-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap
+}
+
+.zoom-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto
+}
+
+/* ══ MOBILE RESPONSIVE ════════════════════════════════ */
+@media (max-width: 820px) {
+
+    /* ── Global ── */
+    .app {
+        padding: 12px 10px
+    }
+
+    .header {
+        margin-bottom: 12px
+    }
+
+    .header h1 {
+        font-size: 15px
+    }
+
+    /* ── Step tabs ── */
+    .steps {
+        margin-bottom: 12px
+    }
+
+    .step-tab {
+        font-size: 10px;
+        padding: 8px 4px
+    }
+
+    .step-num {
+        width: 15px;
+        height: 15px;
+        font-size: 9px;
+        line-height: 15px;
+        margin-right: 3px
+    }
+
+    /* ── Cards ── */
+    .card {
+        padding: 14px
+    }
+
+    .upload-area {
+        padding: 26px 14px
+    }
+
+    /* ── Designer layout: vertical stack, canvas FIRST ── */
+    .designer-layout {
+        flex-direction: column;
+        gap: 10px;
+        min-height: unset
+    }
+
+    .canvas-area {
+        order: -1;
+        width: 100%
+    }
+
+    /* canvas goes to top */
+    .left-panel {
+        order: 0;
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .right-panel {
+        order: 1;
+        width: 100%
+    }
+
+    /* ── Left panel: two cards sit side-by-side ── */
+    .left-panel .panel-card {
+        flex: 1;
+        min-width: 140px;
+        margin-bottom: 0
+    }
+
+    /* ── Add-field type buttons: compact row ── */
+    .type-btn {
+        width: auto;
+        padding: 6px 10px;
+        margin-bottom: 4px;
+        font-size: 11px
+    }
+
+    /* ── Canvas scroll: fixed comfortable viewport height ── */
+    .canvas-scroll {
+        min-height: 65vh !important;
+        padding: 12px
+    }
+
+    /* ── Size preset toolbar wraps ── */
+    #customSizeFields {
+        flex-wrap: wrap;
+        gap: 4px
+    }
+
+    /* ── Zoom label subtle shrink ── */
+    #zoomLabel {
+        min-width: 30px
+    }
+
+    /* ── Props panel: 2-col grid for rotation buttons ── */
+    .rot-row input[type=range] {
+        min-width: 0
+    }
+
+    /* ── Footer actions spread on mobile ── */
+    .footer-actions {
+        justify-content: space-between
+    }
+
+    /* ── Prevent double-tap zoom on buttons ── */
+    .btn,
+    .type-btn,
+    .col-chip,
+    .align-btn,
+    .style-btn {
+        touch-action: manipulation
+    }
+}
+
+@media (max-width: 480px) {
+    .step-tab {
+        font-size: 9px;
+        padding: 7px 2px
+    }
+
+    .step-num {
+        display: none
+    }
+
+    /* On very small screens stack the two left-panel cards */
+    .left-panel .panel-card {
+        flex: 1 1 100%
+    }
+
+    /* Slightly larger resize handle for fat fingers */
+    .field-el .res-handle {
+        width: 16px;
+        height: 16px;
+        bottom: -7px;
+        right: -7px
+    }
+
+    .canvas-scroll {
+        min-height: 55vw !important
+    }
+
+    /* Full-width footer buttons */
+    .footer-actions .btn {
+        flex: 1;
+        justify-content: center
+    }
+}
