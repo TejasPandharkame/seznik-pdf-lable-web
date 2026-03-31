@@ -5,6 +5,7 @@ let cw = 0, ch = 0;
 const MM2PX = 3.7795;
 // CANVAS_DPR is computed per-size in applySize() — small labels need higher DPR
 let CANVAS_DPR = 2;
+let bgImage = null; // Optional background/reference image on the canvas
 
 /* ─── Barcode / QR caches ───────────────────────────── */
 // Each entry: { img, val, w, h }  — keyed by field id
@@ -83,11 +84,8 @@ function renderColChips() {
     return `<span class="col-chip${u ? ' used' : ''}" onclick="quickAdd('${esc(c)}')">${u ? '<span style="color:#3B6D11;font-size:10px">✓</span> ' : ''}${esc(c)}</span>`;
   }).join('');
   const sel = document.getElementById('colSelect');
-  sel.innerHTML = columns.map(c =>
-    `<option value="${esc(c)}"${used.has(c) ? ' disabled style="color:#ccc"' : ''}>${esc(c)}${used.has(c) ? ' (added)' : ''}</option>`
-  ).join('');
-  const first = columns.find(c => !used.has(c));
-  if (first) sel.value = first;
+  sel.innerHTML = columns.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  if (columns.length) sel.value = columns[0];
 }
 
 function onSizePreset() {
@@ -130,6 +128,12 @@ function applySize() {
   // Invalidate image caches — size changed
   Object.keys(bcCache).forEach(k => delete bcCache[k]);
   Object.keys(qrCache).forEach(k => delete qrCache[k]);
+  // Update PDF filename with size suffix
+  const pdfNameEl = document.getElementById('pdfName');
+  if (pdfNameEl) {
+    const base = pdfNameEl.value.replace(/-\d+x\d+mm$/, '') || 'seznik-labels';
+    pdfNameEl.value = `${base}-${wmm}x${hmm}mm`;
+  }
   zoomFit();
   drawCanvas();
 }
@@ -158,7 +162,6 @@ function applyZoom() {
 
 /* ─── Fields ─────────────────────────────────────────── */
 function quickAdd(col) {
-  if (getUsedCols().has(col)) return;
   document.getElementById('colSelect').value = col;
   addField('text');
 }
@@ -166,14 +169,20 @@ function quickAdd(col) {
 function addField(type) {
   const col = document.getElementById('colSelect').value;
   if (!col) return;
-  if (getUsedCols().has(col)) { alert('"' + col + '" is already on canvas.'); return; }
+  // Determine index (which record offset this field should map to).
+  // E.g., if this is the 3rd time adding "Name", it gets index 2 (shows 3rd record on the page)
+  let idx = 0;
+  fields.forEach(f => { if (f.col === col && f.index >= idx) idx = f.index + 1; });
+  
   const f = {
     id: 'f' + Date.now(), col, type,
     x: 20, y: 20 + (fields.length * 32),
     w: type === 'qr' ? 80 : type === 'barcode' ? 140 : 120,
     h: type === 'qr' ? 80 : type === 'barcode' ? 56 : 26,
-    fontSize: 14, bold: false, italic: false, underline: false, strikethrough: false,
-    align: 'left', prefix: '', bcText: true, rotation: 0
+    fontSize: 14, fontFamily: 'system-ui',
+    bold: false, italic: false, underline: false, strikethrough: false,
+    align: 'left', prefix: '', bcText: true, rotation: 0,
+    index: idx
   };
   fields.push(f);
   createFieldEl(f);
@@ -277,6 +286,7 @@ function selectField(id) {
   document.getElementById('textProps').style.display = f.type === 'text' ? 'block' : 'none';
   document.getElementById('barcodeProps').style.display = f.type === 'barcode' ? 'block' : 'none';
   document.getElementById('propFontSize').value = f.fontSize;
+  document.getElementById('propFontFamily').value = f.fontFamily || 'system-ui';
   document.getElementById('propPrefix').value = f.prefix || '';
   document.getElementById('propBcText').value = f.bcText ? '1' : '0';
   ['bold', 'italic', 'underline', 'strikethrough'].forEach(s =>
@@ -286,6 +296,86 @@ function selectField(id) {
   const rot = Math.round(f.rotation || 0);
   document.getElementById('propRotation').value = rot;
   document.getElementById('rotVal').textContent = rot + '°';
+}
+
+function updateFontFamily() {
+  if (!selectedId) return;
+  const f = fields.find(x => x.id === selectedId);
+  if (!f) return;
+  f.fontFamily = document.getElementById('propFontFamily').value;
+  drawCanvas();
+}
+
+/* ─── Template Save / Import ─────────────────────────── */
+function saveTemplate() {
+  const wmm = parseFloat(document.getElementById('lwmm').value) || 80;
+  const hmm = parseFloat(document.getElementById('lhmm').value) || 40;
+  const blob = new Blob([JSON.stringify({ version: 1, wmm, hmm, fields }, null, 2)],
+    { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `template-${wmm}x${hmm}mm.json`;
+  a.click();
+}
+
+function importTemplate(file) {
+  if (!file) return;
+  const isImage = file.type.startsWith('image/');
+
+  if (isImage) {
+    // Load as a background/reference image on the canvas
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        bgImage = img;
+        // Auto-set canvas size to match image aspect ratio (keep width, adjust height)
+        const wmm = parseFloat(document.getElementById('lwmm').value) || 80;
+        const ratio = img.naturalHeight / img.naturalWidth;
+        const hmm = Math.round(wmm * ratio * 10) / 10;
+        document.getElementById('lhmm').value = hmm;
+        applySize();
+        document.getElementById('clearBgBtn').style.display = 'inline-flex';
+        drawCanvas();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    return;
+  }
+
+  // JSON template
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const t = JSON.parse(e.target.result);
+      if (t.wmm) document.getElementById('lwmm').value = t.wmm;
+      if (t.hmm) document.getElementById('lhmm').value = t.hmm;
+      applySize();
+      // Clear existing fields
+      fields.forEach(f => { const el = document.getElementById('fe_' + f.id); if (el) el.remove(); });
+      fields = []; selectedId = null;
+      document.getElementById('noSel').style.display = 'block';
+      document.getElementById('selProps').style.display = 'none';
+      // Restore saved fields
+      if (Array.isArray(t.fields)) {
+        t.fields.forEach(saved => {
+          const nf = { ...saved, id: 'f' + Date.now() + Math.round(Math.random() * 1e6) };
+          fields.push(nf);
+          createFieldEl(nf);
+        });
+      }
+      renderColChips();
+      drawCanvas();
+    } catch { alert('Invalid template file.'); }
+  };
+  reader.readAsText(file);
+}
+
+function clearBackground() {
+  bgImage = null;
+  document.getElementById('clearBgBtn').style.display = 'none';
+  drawCanvas();
 }
 
 function changePropType(type) {
@@ -407,8 +497,17 @@ function updateRowIndicator() {
 }
 
 /* ─── Draw canvas ─────────────────────────────────────── */
+// Map CSS font family name to jsPDF built-in font
+function jsPdfFont(fontFamily) {
+  const f = (fontFamily || '').toLowerCase();
+  if (f.includes('georgia') || f.includes('times')) return 'times';
+  if (f.includes('courier')) return 'courier';
+  return 'helvetica';
+}
+
 function buildFont(f) {
-  return (f.italic ? 'italic ' : '') + (f.bold ? 'bold ' : '') + ((f.fontSize || 14) + 'px system-ui,sans-serif');
+  const family = f.fontFamily || 'system-ui';
+  return (f.italic ? 'italic ' : '') + (f.bold ? 'bold ' : '') + `${f.fontSize || 14}px ${family},sans-serif`;
 }
 
 function drawCanvas() {
@@ -420,9 +519,20 @@ function drawCanvas() {
   ctx.save();
   ctx.scale(CANVAS_DPR, CANVAS_DPR);
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cw, ch);
-  const row = previewMode && parsedData.length ? parsedData[previewRow] : null;
+  // Draw background image (reference template) if loaded
+  if (bgImage) {
+    ctx.globalAlpha = 0.55; // Semi-transparent so fields are readable on top
+    ctx.drawImage(bgImage, 0, 0, cw, ch);
+    ctx.globalAlpha = 1;
+  }
   fields.forEach(f => {
-    const val = row ? String(row[f.col] ?? '') : ('[' + f.col + ']');
+    // Map to the correct record based on the field's index slot
+    let val = '[' + f.col + (f.index > 0 ? ` #${f.index+1}` : '') + ']';
+    if (previewMode && parsedData.length) {
+      const targetRowIndex = previewRow + (f.index || 0);
+      const rowData = parsedData[targetRowIndex];
+      val = rowData ? String(rowData[f.col] ?? '') : ''; // blank if we run out of records
+    }
     const cx = f.x + f.w / 2, cy = f.y + f.h / 2;
     const rot = (f.rotation || 0) * Math.PI / 180;
     ctx.save();
@@ -548,7 +658,61 @@ function wrapTextLines(ctx, text, maxW) {
   return lines.length ? lines : [''];
 }
 
-/* ─── PDF Generation ─────────────────────────────────── */
+/* ─── PDF Generation (WYSIWYG High-DPI Canvas) ───────── */
+async function drawPageToPdf(doc, startRowIdx, pgW, pgH) {
+  return new Promise(async resolve => {
+    // Render at 4x resolution for crystal clear print quality
+    const c = document.createElement('canvas');
+    c.width = cw * 4;
+    c.height = ch * 4;
+    const ctx = c.getContext('2d');
+    ctx.scale(4, 4);
+    
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, cw, ch);
+    
+    // Fill background exactly like visual canvas
+    if (bgImage) {
+      ctx.drawImage(bgImage, 0, 0, cw, ch);
+    }
+
+    for (const f of fields) {
+      const targetRowIndex = startRowIdx + (f.index || 0);
+      if (targetRowIndex >= parsedData.length) continue;
+      const val = String(parsedData[targetRowIndex][f.col] ?? '');
+      if (!val) continue;
+
+      const cx = f.x + f.w / 2, cy = f.y + f.h / 2;
+      const rot = (f.rotation || 0) * Math.PI / 180;
+      
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rot);
+      ctx.translate(-f.w / 2, -f.h / 2);
+
+      if (f.type === 'text') {
+        drawText(ctx, f, val);
+      } else if (f.type === 'barcode') {
+        const png = await barcodeToPng(val, Math.round(f.w * 4), Math.round(f.h * 4), f.bcText);
+        const img = new Image(); img.src = png;
+        await new Promise(r => img.onload = r);
+        ctx.drawImage(img, 0, 0, f.w, f.h);
+      } else if (f.type === 'qr') {
+        const png = await qrToPng(val, Math.round(f.w * 2), Math.round(f.h * 2));
+        const img = new Image(); img.src = png;
+        await new Promise(r => img.onload = r);
+        ctx.drawImage(img, 0, 0, f.w, f.h);
+      }
+      ctx.restore();
+    }
+    
+    // Add the flawlessly rendered page to the PDF
+    const imgData = c.toDataURL('image/jpeg', 0.95);
+    doc.addImage(imgData, 'JPEG', 0, 0, pgW, pgH);
+    resolve();
+  });
+}
+
 async function generatePDF() {
   if (!parsedData.length || !fields.length) { alert('Please add data and fields.'); return; }
   const btn = document.getElementById('genBtn');
@@ -556,91 +720,48 @@ async function generatePDF() {
   document.getElementById('progressBar').style.display = 'block';
   document.getElementById('progressFill').style.width = '0%';
 
-  const wmm = parseFloat(document.getElementById('lwmm').value) || 80;
-  const hmm = parseFloat(document.getElementById('lhmm').value) || 40;
-  const pos = document.getElementById('labelPos').value;
+  const pgW  = parseFloat(document.getElementById('lwmm').value) || 80;
+  const pgH  = parseFloat(document.getElementById('lhmm').value) || 40;
   const { jsPDF } = window.jspdf;
-
-  let pgW = wmm, pgH = hmm, ox = 0, oy = 0;
-  if (pos === 'center') { pgW = 210; pgH = 297; ox = (210 - wmm) / 2; oy = (297 - hmm) / 2; }
 
   const doc = new jsPDF({ unit: 'mm', format: [pgW, pgH], orientation: pgW > pgH ? 'landscape' : 'portrait' });
 
-  const scX = wmm / cw, scY = hmm / ch;
+  // Calculate how many records each physical sheet consumes
+  let maxIndex = 0;
+  fields.forEach(f => { if (f.index > maxIndex) maxIndex = f.index; });
+  const recordsPerPage = maxIndex + 1;
 
-  for (let i = 0; i < parsedData.length; i++) {
-    if (i > 0) doc.addPage([pgW, pgH]);
-    const row = parsedData[i];
-
-    doc.setFillColor(255, 255, 255);
-    doc.rect(ox, oy, wmm, hmm, 'F');
-
-    for (const f of fields) {
-      const val = String(row[f.col] ?? '');
-      const fcx = ox + (f.x + f.w / 2) * scX;
-      const fcy = oy + (f.y + f.h / 2) * scY;
-      const fwm = f.w * scX;
-      const fhm = f.h * scY;
-      const rot = f.rotation || 0;
-
-      if (f.type === 'text') {
-        const text = (f.prefix || '') + val;
-        const fsz = Math.max(4, (f.fontSize || 14) * scX * 2.835);
-        let style = 'normal';
-        if (f.bold && f.italic) style = 'bolditalic';
-        else if (f.bold) style = 'bold';
-        else if (f.italic) style = 'italic';
-        doc.setFontSize(fsz);
-        doc.setFont('helvetica', style);
-        doc.setTextColor(0, 0, 0);
-        const lh = fsz * 0.352 * 1.35;
-        const lines = doc.splitTextToSize(text, fwm);
-        lines.forEach((line, li) => {
-          let tx;
-          const lineY = fcy - fhm / 2 + fsz * 0.352 + li * lh;
-          if (f.align === 'center') tx = fcx;
-          else if (f.align === 'right') tx = fcx + fwm / 2;
-          else tx = fcx - fwm / 2;
-          doc.text(line, tx, lineY, { align: f.align || 'left', angle: rot });
-          if (f.underline) {
-            doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.2);
-            const ux = fcx - fwm / 2, uy = lineY + 0.5;
-            doc.line(ux, uy, ux + fwm, uy);
-          }
-          if (f.strikethrough) {
-            doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.2);
-            const sx = fcx - fwm / 2, sy = lineY - fsz * 0.352 * 0.3;
-            doc.line(sx, sy, sx + fwm, sy);
-          }
-        });
-      } else if (f.type === 'barcode' && val) {
-        try {
-          const png = await barcodeToPng(val, Math.round(f.w * 4), Math.round(f.h * 4), f.bcText);
-          addRotatedImage(doc, png, fcx, fcy, fwm, fhm, rot);
-        } catch (e) { doc.setFontSize(6); doc.text('[BC]', fcx - fwm / 2, fcy); }
-      } else if (f.type === 'qr' && val) {
-        try {
-          const png = await qrToPng(val, Math.round(f.w * 2), Math.round(f.h * 2));
-          addRotatedImage(doc, png, fcx, fcy, fwm, fhm, rot);
-        } catch (e) { doc.setFontSize(6); doc.text('[QR]', fcx - fwm / 2, fcy); }
-      }
-    }
+  let pageNum = 0;
+  for (let i = 0; i < parsedData.length; i += recordsPerPage) {
+    if (pageNum > 0) doc.addPage([pgW, pgH]);
+    await drawPageToPdf(doc, i, pgW, pgH);
+    pageNum++;
     document.getElementById('progressFill').style.width =
-      Math.round(((i + 1) / parsedData.length) * 100) + '%';
+      Math.round((i / parsedData.length) * 100) + '%';
     await tick();
   }
+
   pdfDoc = doc;
   btn.disabled = false; btn.textContent = '⚡ Generate PDF';
   document.getElementById('progressBar').style.display = 'none';
   document.getElementById('dlWrap').style.display = 'flex';
+  document.getElementById('previewBtn').style.display = 'inline-flex';
 }
 
-function addRotatedImage(doc, imgData, cx, cy, w, h, angleDeg) {
-  if (angleDeg === 0) {
-    doc.addImage(imgData, 'PNG', cx - w / 2, cy - h / 2, w, h);
-    return;
-  }
-  doc.addImage(imgData, 'PNG', cx - w / 2, cy - h / 2, w, h, '', 'FAST', angleDeg);
+/* ─── PDF Preview ─────────────────────────────── */
+function previewPDF() {
+  if (!pdfDoc) { alert('Generate PDF first.'); return; }
+  const blob = pdfDoc.output('blob');
+  const url = URL.createObjectURL(blob);
+  document.getElementById('pdfPreviewFrame').src = url;
+  document.getElementById('pdfPreviewModal').style.display = 'flex';
+}
+
+function closePdfPreview() {
+  const frame = document.getElementById('pdfPreviewFrame');
+  document.getElementById('pdfPreviewModal').style.display = 'none';
+  if (frame.src.startsWith('blob:')) URL.revokeObjectURL(frame.src);
+  frame.src = '';
 }
 
 function barcodeToPng(val, w, h, showText) {
