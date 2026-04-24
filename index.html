@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Seznik Label App</title>
+  <link rel="stylesheet" href="label.css" />
+  <!-- Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+
+<body>
+  <div class="app">
+    <div class="header">
+      <img src="logo.png" style="height: 38px; width: auto;" alt="SEZNIK" />
+      <h1>Label App <span class="badge badge-purple">v4</span></h1>
+    </div>
+    <div class="steps">
+      <div class="step-tab active" id="tab1"><span class="step-num">1</span>Upload Data</div>
+      <div class="step-tab" id="tab2"><span class="step-num">2</span>Design Label</div>
+      <div class="step-tab" id="tab3"><span class="step-num">3</span>Generate PDF</div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div id="step1">
+      <div class="card">
+        <div class="section-title">Upload your spreadsheet</div>
+        <div class="alert alert-info">Supported: <strong>.xlsx, .xls, .csv</strong> — First row must be column headers.
+        </div>
+        <div class="upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
+          <div style="font-size:32px;margin-bottom:8px;opacity:.4">📂</div>
+          <p style="font-size:14px"><strong>Click to upload</strong> or drag &amp; drop</p>
+          <p style="font-size:12px;color:#aaa;margin-top:4px">Excel (.xlsx, .xls) or CSV</p>
+        </div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+        <div id="dataPreviewWrap" style="display:none;margin-top:14px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span class="section-title" style="margin:0;font-size:13px">Preview</span>
+            <span id="rowCount" class="badge badge-green"></span>
+            <span id="colCount" class="badge badge-purple"></span>
+          </div>
+          <div class="data-preview" id="dataPreview"></div>
+        </div>
+      </div>
+      <div class="footer-actions">
+        <button class="btn btn-primary" id="toStep2" style="display:none" onclick="goStep(2)">Next: Design Label
+          →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div id="step2" style="display:none">
+      <div class="mobile-nav-top" style="display:none; justify-content:space-between; margin-bottom:12px;">
+        <button class="btn btn-outline btn-sm" onclick="goStep(1)">← Back</button>
+        <button class="btn btn-primary btn-sm" onclick="goStep(3)">Next: PDF →</button>
+      </div>
+      <div class="card" id="cardSize" style="padding:14px 18px; margin-bottom:12px;">
+        <div class="size-toolbar">
+          <div style="display:flex;align-items:center;gap:8px">
+            <label style="margin:0;white-space:nowrap;font-size:12px">Size preset:</label>
+            <select id="sizePreset" style="width:158px" onchange="onSizePreset()">
+              <option value="custom">Custom</option>
+              <option value="A4">A4 — 210W × 297H mm</option>
+              <option value="A5">A5 — 148W × 210H mm</option>
+              <option value="label_50x25">50W × 25H mm</option>
+              <option value="label_80x40">80W × 40H mm</option>
+              <option value="label_100x50">100W × 50H mm</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px" id="customSizeFields">
+            <label style="margin:0;font-size:12px;white-space:nowrap">Width (mm)</label>
+            <input type="number" id="lwmm" value="80" min="10" max="500" style="width:64px" onchange="applySize()" />
+            <label style="margin:0;font-size:12px;white-space:nowrap">Height (mm)</label>
+            <input type="number" id="lhmm" value="40" min="10" max="700" style="width:64px" onchange="applySize()" />
+          </div>
+          <div class="zoom-group">
+            <span style="font-size:12px;color:#666">Zoom:</span>
+            <button class="btn btn-ghost btn-sm" onclick="zoom(-0.15)">−</button>
+            <span id="zoomLabel" style="font-size:12px;min-width:38px;text-align:center">100%</span>
+            <button class="btn btn-ghost btn-sm" onclick="zoom(0.15)">+</button>
+            <button class="btn btn-ghost btn-sm" onclick="zoomFit()">Fit</button>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;margin-left:4px">
+            <button class="btn btn-ghost btn-sm" onclick="saveTemplate()" title="Save current design as template">💾 Save Template</button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('templateInput').click()" title="Load a saved template or image">📥 Import Template</button>
+            <input type="file" id="templateInput" accept=".json,.png,.jpg,.jpeg,.webp,.gif" style="display:none" onchange="importTemplate(this.files[0]);this.value=''"/>
+            <button class="btn btn-ghost btn-sm" id="clearBgBtn" onclick="clearBackground()" style="display:none;color:#E24B4A">✕ Clear Image</button>
+          </div>
+        </div>
+      </div>
+      <div class="designer-layout">
+        <div class="left-panel">
+          <div class="panel-card" id="cardAddField">
+            <div class="panel-title">Add Field</div>
+            <div style="margin-bottom:8px">
+              <label>Column</label>
+              <select id="colSelect" style="margin-bottom:8px"></select>
+            </div>
+            <button class="type-btn" onclick="addField('text')"><span class="type-icon ti-text">T</span>Text</button>
+            <button class="type-btn" onclick="addField('barcode')"><span
+                class="type-icon ti-barcode">▦</span>Barcode</button>
+            <button class="type-btn" onclick="addField('qr')"><span class="type-icon ti-qr">▩</span>QR Code</button>
+          </div>
+          <div class="panel-card" id="cardCols">
+            <div class="panel-title">Columns</div>
+            <div id="colChips" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+          </div>
+        </div>
+
+        <div class="canvas-area">
+          <div class="preview-bar">
+            <button class="btn btn-ghost btn-sm" onclick="togglePreview()" id="previewToggle">👁 Preview Data</button>
+            <span id="previewStatus" style="font-size:12px;color:#888">Design mode</span>
+            <div id="previewNav" style="display:none;align-items:center;gap:6px">
+              <button class="btn btn-ghost btn-sm" onclick="prevRow()">← Prev</button>
+              <span id="rowIndicator" style="font-size:12px;color:#444;min-width:80px;text-align:center"></span>
+              <button class="btn btn-ghost btn-sm" onclick="nextRow()">Next →</button>
+            </div>
+          </div>
+          <div id="previewTableWrap" style="display:none">
+            <div class="preview-data-table" id="previewDataTable"></div>
+          </div>
+          <div class="canvas-scroll" id="canvasScroll">
+            <div class="canvas-inner" id="canvasInner">
+              <canvas id="labelCanvas"></canvas>
+              <div id="fieldsLayer" style="position:absolute;top:0;left:0"></div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:#ccc;text-align:center;margin-top:4px" id="canvasInfo"></div>
+        </div>
+
+        <div class="right-panel">
+          <div class="panel-card" style="min-height:340px">
+            <div class="panel-title">Field Properties</div>
+            <div id="noSel" style="font-size:12px;color:#aaa">Select a field on canvas to edit.</div>
+            <div id="selProps" style="display:none">
+              <div style="font-size:12px;font-weight:500;color:#534AB7;margin-bottom:8px" id="propFieldName"></div>
+              <div class="prop-row">
+                <label>Type</label>
+                <div class="type-pill">
+                  <button id="ptText" onclick="changePropType('text')">Text</button>
+                  <button id="ptBarcode" onclick="changePropType('barcode')">Barcode</button>
+                  <button id="ptQR" onclick="changePropType('qr')">QR</button>
+                </div>
+              </div>
+              <div id="textProps">
+                <div class="prop-row">
+                  <label>Font</label>
+                  <select id="propFontFamily" onchange="updateFontFamily()">
+                    <option value="system-ui">System UI</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="'Courier New'">Courier New</option>
+                    <option value="Verdana">Verdana</option>
+                    <option value="'Times New Roman'">Times New Roman</option>
+                    <option value="Impact">Impact</option>
+                    <option value="Trebuchet MS">Trebuchet MS</option>
+                  </select>
+                </div>
+                <div class="prop-row">
+                  <label>Font size (px)</label>
+                  <input type="number" id="propFontSize" value="14" min="6" max="80" onchange="updateProp()" />
+                </div>
+                <div class="prop-row">
+                  <label>Style</label>
+                  <div class="style-toggles">
+                    <button class="style-btn" id="sb-bold" title="Bold" onclick="toggleStyle('bold')"><b>B</b></button>
+                    <button class="style-btn" id="sb-italic" title="Italic"
+                      onclick="toggleStyle('italic')"><i>I</i></button>
+                    <button class="style-btn" id="sb-underline" title="Underline" onclick="toggleStyle('underline')"
+                      style="text-decoration:underline">U</button>
+                    <button class="style-btn" id="sb-strikethrough" title="Strikethrough"
+                      onclick="toggleStyle('strikethrough')" style="text-decoration:line-through">S</button>
+                  </div>
+                </div>
+                <div class="prop-row">
+                  <label>Alignment</label>
+                  <div class="align-btns">
+                    <button class="align-btn active" id="ab-left" onclick="setAlign('left')" title="Align Left">
+                      <svg width="14" height="12" viewBox="0 0 14 12" fill="currentColor">
+                        <rect x="0" y="0" width="14" height="2" rx="1"/>
+                        <rect x="0" y="5" width="9" height="2" rx="1"/>
+                        <rect x="0" y="10" width="11" height="2" rx="1"/>
+                      </svg>
+                    </button>
+                    <button class="align-btn" id="ab-center" onclick="setAlign('center')" title="Align Center">
+                      <svg width="14" height="12" viewBox="0 0 14 12" fill="currentColor">
+                        <rect x="0" y="0" width="14" height="2" rx="1"/>
+                        <rect x="2.5" y="5" width="9" height="2" rx="1"/>
+                        <rect x="1.5" y="10" width="11" height="2" rx="1"/>
+                      </svg>
+                    </button>
+                    <button class="align-btn" id="ab-right" onclick="setAlign('right')" title="Align Right">
+                      <svg width="14" height="12" viewBox="0 0 14 12" fill="currentColor">
+                        <rect x="0" y="0" width="14" height="2" rx="1"/>
+                        <rect x="5" y="5" width="9" height="2" rx="1"/>
+                        <rect x="3" y="10" width="11" height="2" rx="1"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="prop-row">
+                  <label>Prefix</label>
+                  <input type="text" id="propPrefix" placeholder="e.g. MRP: ₹" onchange="updateProp()" />
+                </div>
+              </div>
+              <div id="barcodeProps" style="display:none">
+                <div class="prop-row">
+                  <label>Show value text</label>
+                  <select id="propBcText" onchange="updateProp()">
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                  </select>
+                </div>
+              </div>
+              <!-- Rotation (all types) -->
+              <div class="prop-row">
+                <label>Rotation</label>
+                <div class="rot-row">
+                  <input type="range" id="propRotation" min="0" max="360" step="1" value="0"
+                    oninput="updateRotation()" />
+                  <span class="rot-val" id="rotVal">0°</span>
+                </div>
+                <div style="display:flex;gap:4px;margin-top:4px">
+                  <button class="btn btn-ghost btn-sm" onclick="setRotation(0)">0°</button>
+                  <button class="btn btn-ghost btn-sm" onclick="setRotation(90)">90°</button>
+                  <button class="btn btn-ghost btn-sm" onclick="setRotation(180)">180°</button>
+                  <button class="btn btn-ghost btn-sm" onclick="setRotation(270)">270°</button>
+                </div>
+              </div>
+              <button class="btn btn-danger btn-sm" style="margin-top:6px" onclick="deleteSelected()">Remove
+                field</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-actions">
+        <button class="btn btn-outline" onclick="goStep(1)">← Back</button>
+        <button class="btn btn-primary" onclick="goStep(3)">Next: Generate PDF →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div id="step3" style="display:none">
+      <div class="card">
+        <div class="section-title">Generate &amp; Download PDF</div>
+        <div class="alert alert-info">Each label page will be exactly the label size you defined. <span
+            id="s3info"></span></div>
+        <div class="row" style="margin-bottom:14px">
+          <div class="col">
+            <label>Label position on page</label>
+            <select id="labelPos">
+              <option value="topleft">Exact grid size</option>
+              <option value="center">Center grid on A4</option>
+            </select>
+          </div>
+        </div>
+        <div class="progress-bar" id="progressBar" style="display:none">
+          <div class="progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap">
+          <button class="btn btn-primary" id="genBtn" onclick="generatePDF()">⚡ Generate PDF</button>
+          <button class="btn btn-outline" id="previewBtn" onclick="previewPDF()" style="display:none">👁 Preview PDF</button>
+          <div id="dlWrap" style="display:none;align-items:center;gap:8px;flex-wrap:wrap">
+            <div
+              style="display:flex;align-items:center;gap:0;border:1px solid #534AB7;border-radius:8px;overflow:hidden">
+              <input type="text" id="pdfName" value="seznik-labels"
+                style="border:none;border-radius:0;width:180px;padding:7px 10px;font-size:12px;background:#fff;outline:none" />
+              <span
+                style="padding:7px 8px;background:#f0effe;font-size:12px;color:#534AB7;border-left:1px solid #d4cfff">.pdf</span>
+            </div>
+            <button class="btn btn-outline" onclick="downloadPDF()">⬇ Download PDF</button>
+          </div>
+        </div>
+      </div>
+      <div class="footer-actions">
+        <button class="btn btn-outline" onclick="goStep(2)">← Back to Designer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App logic -->
+  <script src="label.js"></script>
+
+  <!-- PDF Preview Modal -->
+  <div id="pdfPreviewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:14px;overflow:hidden;width:92vw;max-width:1000px;height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid #eee;background:#fafafa">
+        <span style="font-weight:600;font-size:14px">📄 PDF Preview</span>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary btn-sm" onclick="downloadPDF()">⬇ Download</button>
+          <button class="btn btn-ghost btn-sm" onclick="closePdfPreview()">✕ Close</button>
+        </div>
+      </div>
+      <iframe id="pdfPreviewFrame" style="flex:1;border:none;width:100%" src=""></iframe>
+    </div>
+  </div>
+</body>
+</html>
