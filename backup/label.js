@@ -7,7 +7,6 @@ const MM2PX = 3.7795;
 let CANVAS_DPR = 2;
 let bgImage = null; // Optional background/reference image on the canvas
 
-
 /* ─── Barcode / QR caches ───────────────────────────── */
 // Each entry: { img, val, w, h }  — keyed by field id
 const bcCache = {};   // barcode canvas cache
@@ -110,10 +109,10 @@ function applySize() {
   // Capped so large labels don't use excessive memory
   const pixelArea = cw * ch;
   const screenDPR = window.devicePixelRatio || 1;
-  if (pixelArea < 60000) CANVAS_DPR = 4;   // ≤ ~100×60mm labels
+  if (pixelArea < 60000)       CANVAS_DPR = 4;   // ≤ ~100×60mm labels
   else if (pixelArea < 250000) CANVAS_DPR = 3;   // ≤ ~130×100mm
   else if (pixelArea < 700000) CANVAS_DPR = 2;   // up to ~A4
-  else CANVAS_DPR = Math.max(1, Math.min(2, screenDPR));
+  else                         CANVAS_DPR = Math.max(1, Math.min(2, screenDPR));
 
   const canvas = document.getElementById('labelCanvas');
   // Internal buffer at DPR resolution; CSS size stays at logical pixels → sharp at all zoom levels
@@ -161,54 +160,6 @@ function applyZoom() {
   document.getElementById('zoomLabel').textContent = Math.round(zoomLevel * 100) + '%';
 }
 
-/* ─── Zoom Gestures ────────────────────────────────────────── */
-let isPinching = false;
-let initialPinchDist = 0;
-let initialZoom = 1;
-
-document.addEventListener('DOMContentLoaded', () => {
-  const scrollEl = document.getElementById('canvasScroll');
-  if (!scrollEl) return;
-
-  // Desktop Ctrl+Scroll zoom
-  scrollEl.addEventListener('wheel', (e) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      zoom(e.deltaY < 0 ? 0.15 : -0.15);
-    }
-  }, { passive: false });
-
-  // Mobile Pinch zoom
-  scrollEl.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 2) {
-      isPinching = true;
-      initialPinchDist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      initialZoom = zoomLevel;
-      e.preventDefault();
-    }
-  }, { passive: false });
-
-  scrollEl.addEventListener('touchmove', (e) => {
-    if (isPinching && e.touches.length === 2) {
-      e.preventDefault();
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      const ratio = dist / initialPinchDist;
-      zoomLevel = Math.max(0.15, Math.min(3, +(initialZoom * ratio).toFixed(2)));
-      applyZoom();
-    }
-  }, { passive: false });
-
-  scrollEl.addEventListener('touchend', (e) => {
-    if (e.touches.length < 2) isPinching = false;
-  });
-});
-
 /* ─── Fields ─────────────────────────────────────────── */
 function quickAdd(col) {
   document.getElementById('colSelect').value = col;
@@ -222,7 +173,7 @@ function addField(type) {
   // E.g., if this is the 3rd time adding "Name", it gets index 2 (shows 3rd record on the page)
   let idx = 0;
   fields.forEach(f => { if (f.col === col && f.index >= idx) idx = f.index + 1; });
-
+  
   const f = {
     id: 'f' + Date.now(), col, type,
     x: 20, y: 20 + (fields.length * 32),
@@ -559,7 +510,6 @@ function buildFont(f) {
   return (f.italic ? 'italic ' : '') + (f.bold ? 'bold ' : '') + `${f.fontSize || 14}px ${family},sans-serif`;
 }
 
-
 function drawCanvas() {
   const canvas = document.getElementById('labelCanvas');
   const ctx = canvas.getContext('2d');
@@ -577,7 +527,7 @@ function drawCanvas() {
   }
   fields.forEach(f => {
     // Map to the correct record based on the field's index slot
-    let val = '[' + f.col + (f.index > 0 ? ` #${f.index + 1}` : '') + ']';
+    let val = '[' + f.col + (f.index > 0 ? ` #${f.index+1}` : '') + ']';
     if (previewMode && parsedData.length) {
       const targetRowIndex = previewRow + (f.index || 0);
       const rowData = parsedData[targetRowIndex];
@@ -717,10 +667,10 @@ async function drawPageToPdf(doc, startRowIdx, pgW, pgH) {
     c.height = ch * 4;
     const ctx = c.getContext('2d');
     ctx.scale(4, 4);
-
+    
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, cw, ch);
-
+    
     // Fill background exactly like visual canvas
     if (bgImage) {
       ctx.drawImage(bgImage, 0, 0, cw, ch);
@@ -734,7 +684,7 @@ async function drawPageToPdf(doc, startRowIdx, pgW, pgH) {
 
       const cx = f.x + f.w / 2, cy = f.y + f.h / 2;
       const rot = (f.rotation || 0) * Math.PI / 180;
-
+      
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(rot);
@@ -755,7 +705,7 @@ async function drawPageToPdf(doc, startRowIdx, pgW, pgH) {
       }
       ctx.restore();
     }
-
+    
     // Add the flawlessly rendered page to the PDF
     const imgData = c.toDataURL('image/jpeg', 0.95);
     doc.addImage(imgData, 'JPEG', 0, 0, pgW, pgH);
@@ -770,8 +720,8 @@ async function generatePDF() {
   document.getElementById('progressBar').style.display = 'block';
   document.getElementById('progressFill').style.width = '0%';
 
-  const pgW = parseFloat(document.getElementById('lwmm').value) || 80;
-  const pgH = parseFloat(document.getElementById('lhmm').value) || 40;
+  const pgW  = parseFloat(document.getElementById('lwmm').value) || 80;
+  const pgH  = parseFloat(document.getElementById('lhmm').value) || 40;
   const { jsPDF } = window.jspdf;
 
   const doc = new jsPDF({ unit: 'mm', format: [pgW, pgH], orientation: pgW > pgH ? 'landscape' : 'portrait' });
@@ -813,8 +763,6 @@ function closePdfPreview() {
   if (frame.src.startsWith('blob:')) URL.revokeObjectURL(frame.src);
   frame.src = '';
 }
-
-
 
 function barcodeToPng(val, w, h, showText) {
   return new Promise((res, rej) => {

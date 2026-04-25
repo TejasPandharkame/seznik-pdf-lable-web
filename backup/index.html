@@ -16,7 +16,7 @@
 <body>
   <div class="app">
     <div class="header">
-      <img src="logo.png" style="height: 38px; width: auto;" alt="SEZNIK" />
+      <div class="logo">SL</div>
       <h1>Seznik Label App <span class="badge badge-purple">v4</span></h1>
     </div>
     <div class="steps">
@@ -54,11 +54,7 @@
 
     <!-- STEP 2 -->
     <div id="step2" style="display:none">
-      <div class="mobile-nav-top" style="display:none; justify-content:space-between; margin-bottom:12px;">
-        <button class="btn btn-outline btn-sm" onclick="goStep(1)">← Back</button>
-        <button class="btn btn-primary btn-sm" onclick="goStep(3)">Next: PDF →</button>
-      </div>
-      <div class="card" id="cardSize" style="padding:14px 18px; margin-bottom:12px;">
+      <div class="card" style="padding:14px 18px">
         <div class="size-toolbar">
           <div style="display:flex;align-items:center;gap:8px">
             <label style="margin:0;white-space:nowrap;font-size:12px">Size preset:</label>
@@ -85,21 +81,17 @@
             <button class="btn btn-ghost btn-sm" onclick="zoomFit()">Fit</button>
           </div>
           <div style="display:flex;gap:6px;align-items:center;margin-left:4px">
-            <button class="btn btn-ghost btn-sm" onclick="saveTemplate()" title="Save current design as template">💾
-              Save Template</button>
-            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('templateInput').click()"
-              title="Load a saved template or image">📥 Import Template</button>
-            <input type="file" id="templateInput" accept=".json,.png,.jpg,.jpeg,.webp,.gif" style="display:none"
-              onchange="importTemplate(this.files[0]);this.value=''" />
-            <button class="btn btn-ghost btn-sm" id="clearBgBtn" onclick="clearBackground()"
-              style="display:none;color:#E24B4A">✕ Clear Image</button>
+            <button class="btn btn-ghost btn-sm" onclick="saveTemplate()" title="Save current design as template">💾 Save Template</button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('templateInput').click()" title="Load a saved template or image">📥 Import Template</button>
+            <input type="file" id="templateInput" accept=".json,.png,.jpg,.jpeg,.webp,.gif" style="display:none" onchange="importTemplate(this.files[0]);this.value=''"/>
+            <button class="btn btn-ghost btn-sm" id="clearBgBtn" onclick="clearBackground()" style="display:none;color:#E24B4A">✕ Clear Image</button>
           </div>
         </div>
       </div>
 
       <div class="designer-layout">
         <div class="left-panel">
-          <div class="panel-card" id="cardAddField">
+          <div class="panel-card">
             <div class="panel-title">Add Field</div>
             <div style="margin-bottom:8px">
               <label>Column</label>
@@ -110,7 +102,7 @@
                 class="type-icon ti-barcode">▦</span>Barcode</button>
             <button class="type-btn" onclick="addField('qr')"><span class="type-icon ti-qr">▩</span>QR Code</button>
           </div>
-          <div class="panel-card" id="cardCols">
+          <div class="panel-card">
             <div class="panel-title">Columns</div>
             <div id="colChips" style="display:flex;flex-wrap:wrap;gap:5px"></div>
           </div>
@@ -187,23 +179,23 @@
                   <div class="align-btns">
                     <button class="align-btn active" id="ab-left" onclick="setAlign('left')" title="Align Left">
                       <svg width="14" height="12" viewBox="0 0 14 12" fill="currentColor">
-                        <rect x="0" y="0" width="14" height="2" rx="1" />
-                        <rect x="0" y="5" width="9" height="2" rx="1" />
-                        <rect x="0" y="10" width="11" height="2" rx="1" />
+                        <rect x="0" y="0" width="14" height="2" rx="1"/>
+                        <rect x="0" y="5" width="9" height="2" rx="1"/>
+                        <rect x="0" y="10" width="11" height="2" rx="1"/>
                       </svg>
                     </button>
                     <button class="align-btn" id="ab-center" onclick="setAlign('center')" title="Align Center">
                       <svg width="14" height="12" viewBox="0 0 14 12" fill="currentColor">
-                        <rect x="0" y="0" width="14" height="2" rx="1" />
-                        <rect x="2.5" y="5" width="9" height="2" rx="1" />
-                        <rect x="1.5" y="10" width="11" height="2" rx="1" />
+                        <rect x="0" y="0" width="14" height="2" rx="1"/>
+                        <rect x="2.5" y="5" width="9" height="2" rx="1"/>
+                        <rect x="1.5" y="10" width="11" height="2" rx="1"/>
                       </svg>
                     </button>
                     <button class="align-btn" id="ab-right" onclick="setAlign('right')" title="Align Right">
                       <svg width="14" height="12" viewBox="0 0 14 12" fill="currentColor">
-                        <rect x="0" y="0" width="14" height="2" rx="1" />
-                        <rect x="5" y="5" width="9" height="2" rx="1" />
-                        <rect x="3" y="10" width="11" height="2" rx="1" />
+                        <rect x="0" y="0" width="14" height="2" rx="1"/>
+                        <rect x="5" y="5" width="9" height="2" rx="1"/>
+                        <rect x="3" y="10" width="11" height="2" rx="1"/>
                       </svg>
                     </button>
                   </div>
@@ -270,8 +262,7 @@
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap">
           <button class="btn btn-primary" id="genBtn" onclick="generatePDF()">⚡ Generate PDF</button>
-          <button class="btn btn-outline" id="previewBtn" onclick="previewPDF()" style="display:none">👁 Preview
-            PDF</button>
+          <button class="btn btn-outline" id="previewBtn" onclick="previewPDF()" style="display:none">👁 Preview PDF</button>
           <div id="dlWrap" style="display:none;align-items:center;gap:8px;flex-wrap:wrap">
             <div
               style="display:flex;align-items:center;gap:0;border:1px solid #534AB7;border-radius:8px;overflow:hidden">
@@ -294,12 +285,9 @@
   <script src="label.js"></script>
 
   <!-- PDF Preview Modal -->
-  <div id="pdfPreviewModal"
-    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center">
-    <div
-      style="background:#fff;border-radius:14px;overflow:hidden;width:92vw;max-width:1000px;height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.4)">
-      <div
-        style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid #eee;background:#fafafa">
+  <div id="pdfPreviewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:14px;overflow:hidden;width:92vw;max-width:1000px;height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid #eee;background:#fafafa">
         <span style="font-weight:600;font-size:14px">📄 PDF Preview</span>
         <div style="display:flex;gap:8px">
           <button class="btn btn-primary btn-sm" onclick="downloadPDF()">⬇ Download</button>
@@ -310,5 +298,4 @@
     </div>
   </div>
 </body>
-
 </html>
